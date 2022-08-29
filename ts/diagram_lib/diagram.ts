@@ -78,7 +78,7 @@ export class Diagram {
     private _elements: Elem[] = [];
     private _selected: Elem[] = [];
 
-    private _tool: Tool = new Move_Tool(this);
+    protected _tool: Tool = new Move_Tool(this);
 
     constructor(private _svg: SVGSVGElement) {
         // this.init_drag();

@@ -7,7 +7,7 @@ namespace test {
         test = new sch.Circuit(svg);
         
         let rg = document.createElementNS(svgns, "g");
-        rg.appendChild(svg_rect(0, 0, 20, 20));
+        rg.appendChild(svg_rect(0, 0, 80, 40));
 
         let m1 = new sch.Model(
             "Resistor",
@@ -19,8 +19,9 @@ namespace test {
             rg
         );
 
-        console.log(m1);
         test.inst(m1, new vec(20, 20));
+        test.inst(m1, new vec(5, 5));
+        test.inst(m1, new vec(20, 5));
 
         // let rect = new dg.Block(new vec(4, 6), new vec(1, 1), rg, test);
         // console.log(rect);

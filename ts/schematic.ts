@@ -44,6 +44,26 @@ namespace sch {
             return this._wires;
         }
 
+        public line() {
+            class Wire_Tool extends dg.Tool {
+                private p0: vec;
+                constructor(diagram: Circuit) {
+                    super(
+                        (ev: MouseEvent) => { this.p0 = this.mp(ev).mult(1/diagram.GS).round(); },
+                        (ev: MouseEvent) => { /* DRAW CURRENT LINE */ },
+                        (ev: MouseEvent) => {
+                            let p1 = this.mp(ev).mult(1/diagram.GS).round();
+                            let dp = p1.sub(this.p0);
+                            if (dp.zero()) { this.p0 = null; return; }
+                            new Wire(this.p0, p1, diagram);
+                            this.p0 = null;
+                        },
+                        diagram);
+                }
+            }
+            this._tool = new Wire_Tool(this);
+        }
+
         public netlist() {
             this.reset_nets();
             this.short_wires();
@@ -147,6 +167,7 @@ namespace sch {
             public readonly name: string,
             public readonly label: string,
             public readonly params: string[],
+//            public readonly param_val: number[], // this can be a number, or maybe letter (symbolic)
             public readonly pins: string[],
             public readonly pinp: vec[],
             public readonly size: vec,
@@ -160,6 +181,7 @@ namespace sch {
         // private _in_pins: In_Pin[];
         // private _out_pins: Out_Pin[];
         private _pins: Pin[] = [];
+        // private _params: string[];
         
         constructor(p: vec, private _model: Model, circuit: Circuit) {
             super(p, _model.size, _model.svg, circuit);
@@ -173,13 +195,17 @@ namespace sch {
         }
 
         public netstr(): string {
-            return "";
+            let r = [this._model.label];
+            for (let i = 0; i < this._model.pins.length; i++)
+                r.push(this._model.pins[i], this._pins[i].net.id);
+            // for p of params
+            return r.join(" ");
         }
     }
 
     class Wire extends dg.Line {
         private _net: Net;
-        private _shorts: Wire[] = [];
+        private _shorts: Wire[];
 
         public on_wire(p: vec): boolean {
             return p.distm(this._p) + p.distm(this.pp) == this._size.magm();
@@ -189,6 +215,10 @@ namespace sch {
             let s1 = this.on_wire(w.p) || this.on_wire(w.pp);
             let s2 = w.on_wire(this.p) || w.on_wire(this.pp);
             return s1 || s2;
+        }
+
+        public get net(): Net {
+            return this._net;
         }
 
         public set net(n: Net) {
@@ -201,8 +231,9 @@ namespace sch {
 
         public set p(val: vec) {
             super.p = val; // hope this works
-            for (let w of this._shorts)
-                dg.arr_rm(w._shorts, this);
+            if (this._shorts != null) // when created it first calls this function before creating the array
+                for (let w of this._shorts)
+                    dg.arr_rm(w._shorts, this);
             this._shorts = [];
             for (let w of (this._diagram as Circuit).wires)
                 if (w.short(this)) {
@@ -210,6 +241,10 @@ namespace sch {
                     this._shorts.push(w);
                 }
             // can short wires here not in circuit, since shorts list changes only when moved or created
+        }
+
+        public get p(): vec { // for some reason this is not inherited from element and must be explicitly typed
+            return this._p;
         }
 
     }
