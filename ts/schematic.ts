@@ -76,12 +76,12 @@ namespace sch {
             return r;
         }
 
-        private reset_nets() {
+        protected reset_nets(net_class=Net) {
             for (let w of this._wires) w.net = null;
-            for (let p of this._pins) p.net = new Net();
+            for (let p of this._pins) p.net = new net_class();
         }
 
-        private short_wires() {
+        protected short_wires(net_class=Net) {
             function dfs(w: Wire, n: Net, visited: Set<Wire>): void {
                 console.assert(w.net == null);
                 w.net = n;
@@ -92,10 +92,10 @@ namespace sch {
             }
             for (let w of this._wires)
                 if (w.net == null)
-                    dfs(w, new Net(), new Set<Wire>());
+                    dfs(w, new net_class(), new Set<Wire>());
         }
 
-        private connect_pins() {
+        protected connect_pins() {
             for (let i = 0; i < this._pins.length-1; i++)
                 for (let j = i + 1; j < this._pins.length; j++)
                     if (this._pins[i].p.sub(this._pins[j].p).zero())
@@ -106,7 +106,7 @@ namespace sch {
                         p.net = w.net;
         }
 
-        private num_nets() {
+        protected num_nets() {
             let netset = new Set<Net>();
             // handle ground or fixed net id nets
             for (let p of this._pins)
@@ -118,16 +118,21 @@ namespace sch {
         }
     }
 
-    class Net {
+    export class Net {
+        private _value: any;
+
         constructor(private _id: string = "") {
 
         }
 
         public get id(): string { return this._id; }
         public set id(s: string) { this._id = s; }
+
+        public get value() { return this._value; }
+        public set value(v: any) { this._value = v; }
     }
 
-    class Pin {
+    export class Pin {
         private _net: Net;
 
         constructor(
@@ -146,21 +151,11 @@ namespace sch {
         public set net(n: Net) {
             this._net = n;
         }
+
+        public get block(): Block {
+            return this._block;
+        }
     }
-
-    // USE THIS BELOW FOR DIGITAL SIMULATOR
-    // class In_Pin extends Pin {
-    //     constructor(p: vec, block: Block) {
-    //         super(p, block);
-    //     }
-    //
-    // public on_net_value_change() {...}
-    //
-    // }
-
-    // class Out_Pin extends Pin {
-    //     ...
-    // }
 
     export class Model {
         constructor(
@@ -177,7 +172,7 @@ namespace sch {
         }
     }
 
-    class Block extends dg.Block {
+    export class Block extends dg.Block {
         // private _in_pins: In_Pin[];
         // private _out_pins: Out_Pin[];
         private _pins: Pin[] = [];
